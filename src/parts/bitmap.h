@@ -3,7 +3,9 @@
 
 #include "../config.h"
 #include "../disk.h"
+#include <array>
 #include <bitset>
+#include <climits>
 
 class Bitmap {
   friend class FS;
@@ -13,10 +15,12 @@ class Bitmap {
   Bitmap();
 
 public:
-  i_num_t get_free_inode(i_num_t hint = 0, bool no_set = false);
-  blk_num_t get_free_block(blk_num_t hint = 0, bool no_set = false);
+  i_num_t get_free_inode(i_num_t hint = 0);
+  blk_num_t get_free_block(blk_num_t hint = 0);
 
   static Bitmap &&read_from_disk(const Disk &);
+  std::array<byte, INODES_BITMAP_SIZE / CHAR_BIT> &&inodes_bitmap_bytes() const;
+  std::array<byte, BLOCKS_BITMAP_SIZE / CHAR_BIT> &&blocks_bitmap_bytes() const;
 };
 
 #endif /* BITMAP_H */

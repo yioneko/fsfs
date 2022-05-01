@@ -16,11 +16,16 @@ FS::FS(const std::string &disk_file_path)
       sb(SuperBlock::read_from_disk(this->disk)),
       bitmap(Bitmap::read_from_disk(this->disk)) {}
 
+void FS::dump(const std::string &file_path) const {
+  this->disk.save(file_path);
+}
+
 void FS::init_fs_on_disk(i_uid_t uid, i_gid_t gid) {
   auto root_inode = Inode(ROOT_DIR_MODE, uid, gid);
   auto root_dir = Dir(ROOT_INODE_NUM, ROOT_INODE_NUM);
   const auto root_dir_bytes = root_dir.to_bytes();
 
+  this->bitmap.inodes_bitmap.set(ROOT_INODE_NUM);
   this->write_inode(root_inode, ROOT_INODE_NUM);
   this->write_data(root_dir_bytes.begin(), root_dir_bytes.end(), root_inode);
 }
@@ -65,4 +70,26 @@ FileDataIterator FS::file_data_end(Inode &inode) {
         *this, inode, blk_num / INODE_INDIRECT_BLOCK_ADDRESS_NUM,
         blk_num % INODE_INDIRECT_BLOCK_ADDRESS_NUM, false, 0);
   }
+}
+
+blk_num_t FS::alloc_block() {
+  const auto blk_num = this->bitmap.get_free_block();
+  this->bitmap.blocks_bitmap.set(blk_num);
+  return blk_num;
+}
+void FS::free_block(blk_num_t blk_num) {
+  this->bitmap.blocks_bitmap.reset(blk_num);
+  const auto blk_addr = this->disk.begin() + get_data_block_address(blk_num);
+  std::fill(blk_addr, blk_addr + BLOCK_SIZE, 0);
+}
+
+i_num_t FS::alloc_inode() {
+  const auto inode_num = this->bitmap.get_free_inode();
+  this->bitmap.inodes_bitmap.set(inode_num);
+  return inode_num;
+}
+void FS::free_inode(i_num_t inode_num) {
+  this->bitmap.inodes_bitmap.reset(inode_num);
+  const auto inode_addr = this->disk.begin() + get_inode_address(inode_num);
+  std::fill(inode_addr, inode_addr + INODE_SIZE, 0);
 }

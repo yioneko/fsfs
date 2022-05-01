@@ -23,6 +23,8 @@ public:
   FS(i_uid_t uid, i_gid_t gid);
   FS(const std::string &disk_file_path);
 
+  void dump(const std::string &file_path) const;
+
 private:
   Disk disk;
   SuperBlock sb;
@@ -36,6 +38,12 @@ private:
 
   FileDataIterator file_data_begin(Inode &inode);
   FileDataIterator file_data_end(Inode &inode);
+
+  blk_num_t alloc_block();
+  void free_block(blk_num_t blk_num);
+
+  i_num_t alloc_inode();
+  void free_inode(i_num_t inode_num);
 };
 
 class FileDataIterator {
@@ -115,11 +123,11 @@ private:
   void allocate_if_needed() {
     for (auto i = inode.indirect_block_addresses.size();
          i < indirect_addr_index; ++i) {
-      inode.expand_indirect_addresses({fs.bitmap.get_free_block()});
+      inode.expand_indirect_addresses({fs.alloc_block()});
     }
     auto cur_block_num = this->get_current_block_num();
     if (cur_block_num == 0) {
-      cur_block_num = fs.bitmap.get_free_block();
+      cur_block_num = fs.alloc_block();
     }
   }
 };

@@ -21,12 +21,12 @@ Inode::Inode(i_mode_t mode, i_uid_t uid, i_gid_t gid, i_fsize_t size,
 
 Inode &&Inode::read_from_disk(const Disk &disk, const size_t offset) {
   auto iter = disk.cbegin() + offset;
-  i_mode_t mode = read_n<i_mode_t>(iter);
-  i_uid_t uid = read_n<i_uid_t>(iter);
-  i_gid_t gid = read_n<i_gid_t>(iter);
-  i_fsize_t size = read_n<i_fsize_t>(iter);
-  i_time_t atime = read_n<i_time_t>(iter);
-  i_time_t mtime = read_n<i_time_t>(iter);
+  auto mode = read_n<i_mode_t>(iter);
+  auto uid = read_n<i_uid_t>(iter);
+  auto gid = read_n<i_gid_t>(iter);
+  auto size = read_n<i_fsize_t>(iter);
+  auto atime = read_n<i_time_t>(iter);
+  auto mtime = read_n<i_time_t>(iter);
 
   Inode res(mode, uid, gid, size, atime, mtime);
   for (auto i = 0; i < INODE_DIRECT_ADDRESS_NUM; ++i) {
