@@ -16,8 +16,8 @@ public:
 
   auto begin() { return this->data.begin(); }
   auto end() { return this->data.end(); }
-  auto cbegin() { return this->data.cbegin(); }
-  auto cend() { return this->data.cend(); }
+  auto cbegin() const { return this->data.cbegin(); }
+  auto cend() const { return this->data.cend(); }
 
 private:
   std::array<byte, DISK_SIZE> data;

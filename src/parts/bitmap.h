@@ -13,8 +13,8 @@ class Bitmap {
   Bitmap();
 
 public:
-  i_num_t get_free_inode(i_num_t hint = 0);
-  blk_num_t get_free_block(blk_num_t hint = 0);
+  i_num_t get_free_inode(i_num_t hint = 0, bool no_set = false);
+  blk_num_t get_free_block(blk_num_t hint = 0, bool no_set = false);
 
   static Bitmap &&read_from_disk(const Disk &);
 };
