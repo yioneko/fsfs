@@ -2,6 +2,11 @@
 #include <climits>
 #include <stdexcept>
 
+Bitmap::Bitmap() {
+  this->blocks_bitmap.reset();
+  this->inodes_bitmap.reset();
+}
+
 Bitmap &&Bitmap::read_from_disk(const Disk &disk) {
   Bitmap bitmap;
 

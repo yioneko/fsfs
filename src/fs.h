@@ -48,6 +48,12 @@ private:
 
 class FileDataIterator {
 public:
+  using iterator_category = std::forward_iterator_tag;
+  using value_type = byte;
+  using difference_type = std::ptrdiff_t;
+  using pointer = byte *;
+  using reference = byte &;
+
   FileDataIterator(FS &fs, Inode &inode, size_t addr_index,
                    size_t indirect_addr_index, bool is_direct,
                    size_t blk_offset = 0)

@@ -10,7 +10,6 @@ using byte = unsigned char;
 class Disk {
 public:
   Disk();
-  ~Disk();
   void save(const std::string &path) const;
   static Disk &&load(const std::string &path);
 

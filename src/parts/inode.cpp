@@ -76,7 +76,7 @@ Inode::to_bytes() const {
       auto &indirect_block_bytes_i = indirect_block_bytes[i];
       indirect_block_bytes_i.first = indirect_addresses[i];
 
-      auto indirect_block_iter = indirect_block_bytes_i.second.cbegin();
+      auto indirect_block_iter = indirect_block_bytes_i.second.begin();
       for (auto j = 0; j < INODE_INDIRECT_BLOCK_ADDRESS_NUM; ++j) {
         write_n(indirect_block_iter, indirect_block_addresses[i][j]);
       }

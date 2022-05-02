@@ -2,6 +2,8 @@ add_rules("mode.debug", "mode.release")
 
 target("fsfs")
     set_kind("binary")
+    add_links("fuse3")
+    add_files("src/parts/*.cpp")
     add_files("src/*.cpp")
 
 --
@@ -72,4 +74,3 @@ target("fsfs")
 --
 -- @endcode
 --
-
