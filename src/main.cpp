@@ -241,11 +241,11 @@ int main(int argc, char *argv[]) {
       .readdir = fsfs_readdir,
   };
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-  fuse_opt_add_arg(&args, "-o default_permissions");
 
   if (fuse_opt_parse(&args, &options, option_spec, NULL) == -1) {
     return 1;
   }
+  fuse_opt_add_arg(&args, "-o default_permissions");
 
   if (options.show_help) {
     show_help(argv[0]);
@@ -255,7 +255,7 @@ int main(int argc, char *argv[]) {
       return 1;
     }
 
-    if (access(options.file, F_OK) != 0) {
+    if (access(options.file, F_OK) != -1) {
       fs = new FS(options.file);
     } else {
       // If the file doesn't exist, initialize an empty valid filesystem

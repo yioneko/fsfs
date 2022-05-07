@@ -1,25 +1,10 @@
 #include "dirent.h"
-#include "../utils.h"
 #include <algorithm>
 #include <stdexcept>
 #include <string>
 
 dent_size_t Dirent::min_entry_size(const std::string &fname) {
   return sizeof(dent_size_t) + sizeof(i_num_t) + fname.size();
-}
-
-template <typename Iter> Dirent &&Dirent::read_from_iter(Iter &iter) {
-  const auto entry_size = read_n<dent_size_t>(iter);
-  const auto inum = read_n<i_num_t>(iter);
-
-  auto fname = std::string();
-  while (*iter != '\0') {
-    fname += *iter;
-    ++iter;
-  }
-  iter += entry_size - Dirent::min_entry_size(fname);
-
-  return std::move(Dirent(entry_size, inum, fname));
 }
 
 std::vector<byte> &&Dirent::to_bytes() const {
@@ -42,15 +27,6 @@ Dir::Dir(i_num_t self_inode_num, i_num_t parent_inode_num) {
       Dirent(Dirent::min_entry_size("."), self_inode_num, "."));
   this->dirents.push_back(
       Dirent(Dirent::min_entry_size(".."), parent_inode_num, ".."));
-}
-
-template <typename Iter>
-Dir &&Dir::read_from_data(Iter data_begin, Iter data_end) {
-  Dir dir;
-  while (data_begin != data_end) {
-    dir.dirents.push_back(Dirent::read_from_iter(data_begin));
-  }
-  return std::move(dir);
 }
 
 std::vector<byte> &&Dir::to_bytes() const {

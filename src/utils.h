@@ -1,3 +1,6 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #include "disk.h"
 #include <algorithm>
 #include <cstring>
@@ -54,3 +57,5 @@ inline std::string basename(const std::string &path) {
   }
   return path.substr(last_slash + 1);
 }
+
+#endif /* UTILS_H */

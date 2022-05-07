@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include "disk.h"
+#include "fd_iter.h"
 #include "parts/bitmap.h"
 #include "parts/dirent.h"
 #include "parts/inode.h"
@@ -14,9 +15,6 @@
 
 constexpr i_mode_t ROOT_DIR_MODE = 0555;
 constexpr i_num_t ROOT_INODE_NUM = 0;
-
-class FileDataIterator;
-class FileDataConstIterator;
 
 class FS {
   friend class FileDataIterator;
@@ -34,8 +32,21 @@ public:
 
   void write_inode(const Inode &inode, i_num_t inode_num);
   template <typename Iter>
-  i_fsize_t write_data(Iter begin, Iter end, Inode &inode,
-                       i_fsize_t offset = 0);
+  i_fsize_t write_data(Iter data_begin, Iter data_end, Inode &inode,
+                       i_fsize_t offset = 0) {
+    auto file_data_iter = this->file_data_begin(inode);
+    for (auto i = 0; i < offset; ++i) {
+      ++file_data_iter;
+    }
+
+    auto write_bytes = 0;
+    for (auto data_iter = data_begin; data_iter != data_end;
+         ++data_iter, ++file_data_iter, ++write_bytes) {
+      *file_data_iter = *data_iter;
+    }
+    inode.size = std::min(inode.size, offset + write_bytes);
+    return write_bytes;
+  }
 
   FileDataIterator file_data_begin(Inode &inode);
   FileDataIterator file_data_end(Inode &inode);

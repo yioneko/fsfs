@@ -45,23 +45,6 @@ void FS::write_inode(const Inode &inode, i_num_t inode_num) {
   }
 }
 
-template <typename Iter>
-i_fsize_t FS::write_data(Iter data_begin, Iter data_end, Inode &inode,
-                         i_fsize_t offset) {
-  auto file_data_iter = this->file_data_begin(inode);
-  for (auto i = 0; i < offset; ++i) {
-    ++file_data_iter;
-  }
-
-  auto write_bytes = 0;
-  for (auto data_iter = data_begin; data_iter != data_end;
-       ++data_iter, ++file_data_iter, ++write_bytes) {
-    *file_data_iter = *data_iter;
-  }
-  inode.size = std::min(inode.size, offset + write_bytes);
-  return write_bytes;
-}
-
 Dirent FS::get_dirent(const std::string &path) const {
   const auto path_parts = split_path(path);
   if (path_parts.empty()) {
