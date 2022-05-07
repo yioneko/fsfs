@@ -3,7 +3,6 @@
 
 #include "../config.h"
 #include "../disk.h"
-#include "../fs.h"
 #include <array>
 #include <list>
 #include <string>
@@ -19,7 +18,7 @@ struct Dirent {
 
   std::vector<byte> &&to_bytes() const;
 
-  static Dirent &&read_from_iter(FileDataIterator &iter);
+  template <typename Iter> static Dirent &&read_from_iter(Iter &iter);
   static dent_size_t min_entry_size(const std::string &fname);
 };
 
@@ -32,11 +31,14 @@ struct Dir {
   Dir() = default;
   explicit Dir(i_num_t self_inode_num, i_num_t parent_inode_num);
 
-  static Dir &&read_from_data(FileDataIterator data_begin,
-                              FileDataIterator data_end);
+  template <typename Iter>
+  static Dir &&read_from_data(Iter data_begin, Iter data_end);
 
   void add_entry(const std::string &fname, i_num_t inode_num);
+  Dirent &find_entry(const std::string &fname);
   Dirent &&remove_entry(const std::string &fname);
+
+  i_fsize_t size() const;
 };
 
 #endif /* DIRENT_H */

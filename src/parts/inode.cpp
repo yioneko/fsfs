@@ -99,3 +99,25 @@ void Inode::expand_indirect_addresses(std::initializer_list<blk_num_t> blocks) {
     this->indirect_block_addresses[i].fill(0);
   }
 }
+
+std::vector<blk_num_t> Inode::get_refer_blk_nums() const {
+  std::vector<blk_num_t> res;
+  for (auto i = 0; i < INODE_DIRECT_ADDRESS_NUM; ++i) {
+    if (direct_addresses[i] != 0) {
+      res.push_back(direct_addresses[i]);
+    }
+  }
+  for (auto i = 0; i < INODE_INDIRECT_ADDRESS_NUM; ++i) {
+    if (indirect_addresses[i] != 0) {
+      res.push_back(indirect_addresses[i]);
+    }
+  }
+  for (auto &blk_addresses : indirect_block_addresses) {
+    for (auto &blk_num : blk_addresses) {
+      if (blk_num != 0) {
+        res.push_back(blk_num);
+      }
+    }
+  }
+  return res;
+}

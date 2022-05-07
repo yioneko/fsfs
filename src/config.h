@@ -17,7 +17,7 @@ constexpr size_t DISK_SIZE =
     1 << ADDRESS_LENGTH; // assume the space is byte addressable
 constexpr size_t BLOCK_SIZE = 1 << 10;
 typedef unsigned short blk_num_t;
-constexpr size_t BLOCK_NUM =
+constexpr size_t BLOCK_NUM_MAX =
     18 * (1 << 10); // ~= (DISK_SIZE - INODE_NUM * INODE_SIZE) / BLOCK_SIZE
 
 // inode
@@ -91,7 +91,7 @@ constexpr size_t INODES_BITMAP_START = SUPER_BLOCK_SIZE;
 constexpr size_t INODES_BITMAP_SIZE = INODES_NUM_MAX; // in bits
 
 constexpr size_t BLOCKS_BITMAP_START = INODES_BITMAP_START + INODES_BITMAP_SIZE;
-constexpr size_t BLOCKS_BITMAP_SIZE = BLOCK_NUM; // in bits
+constexpr size_t BLOCKS_BITMAP_SIZE = BLOCK_NUM_MAX; // in bits
 
 constexpr size_t INODES_START = BLOCKS_BITMAP_START + BLOCKS_BITMAP_SIZE;
 constexpr size_t INODES_SIZE = INODES_NUM_MAX * INODE_SIZE;

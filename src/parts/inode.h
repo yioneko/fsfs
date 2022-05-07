@@ -31,6 +31,7 @@ struct Inode {
   static Inode &&read_from_disk(const Disk &, const size_t offset);
 
   void expand_indirect_addresses(std::initializer_list<blk_num_t> blocks);
+  std::vector<blk_num_t> get_refer_blk_nums() const;
 
 private:
   Inode(i_mode_t mode, i_uid_t uid, i_gid_t gid, i_fsize_t size, i_time_t atime,

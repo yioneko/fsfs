@@ -1,11 +1,14 @@
 #include "fs.h"
 #include "config.h"
 #include "disk.h"
+#include "fd_iter.h"
 #include "parts/bitmap.h"
 #include "parts/dirent.h"
 #include "parts/inode.h"
 #include "parts/super_block.h"
+#include "utils.h"
 #include <algorithm>
+#include <fuse3/fuse_opt.h>
 #include <iterator>
 #include <string>
 
@@ -43,16 +46,47 @@ void FS::write_inode(const Inode &inode, i_num_t inode_num) {
 }
 
 template <typename Iter>
-void FS::write_data(Iter data_begin, Iter data_end, Inode &inode,
-                    size_t offset) {
+i_fsize_t FS::write_data(Iter data_begin, Iter data_end, Inode &inode,
+                         i_fsize_t offset) {
   auto file_data_iter = this->file_data_begin(inode);
   for (auto i = 0; i < offset; ++i) {
     ++file_data_iter;
   }
+
+  auto write_bytes = 0;
   for (auto data_iter = data_begin; data_iter != data_end;
-       ++data_iter, ++file_data_iter) {
+       ++data_iter, ++file_data_iter, ++write_bytes) {
     *file_data_iter = *data_iter;
   }
+  inode.size = std::min(inode.size, offset + write_bytes);
+  return write_bytes;
+}
+
+Dirent FS::get_dirent(const std::string &path) const {
+  const auto path_parts = split_path(path);
+  if (path_parts.empty()) {
+    throw std::invalid_argument("root directory has no dirent");
+  }
+
+  auto cur_inode = this->get_inode(ROOT_INODE_NUM);
+  auto cur_dir = this->get_dir_data(ROOT_INODE_NUM);
+  for (auto i = 0; i < path_parts.size() - 1; ++i) {
+    const auto dirent = cur_dir.find_entry(path_parts[i]);
+    const auto inode = this->get_inode(dirent.inode_num);
+    cur_dir =
+        Dir::read_from_data(file_data_cbegin(inode), file_data_cend(inode));
+  }
+
+  return cur_dir.find_entry(path_parts.back());
+}
+
+Inode FS::get_inode(i_num_t inode_num) const {
+  return Inode::read_from_disk(this->disk, get_inode_address(inode_num));
+}
+
+Dir FS::get_dir_data(i_num_t inode_num) const {
+  const auto inode = this->get_inode(inode_num);
+  return Dir::read_from_data(file_data_cbegin(inode), file_data_cend(inode));
 }
 
 FileDataIterator FS::file_data_begin(Inode &inode) {
@@ -72,13 +106,33 @@ FileDataIterator FS::file_data_end(Inode &inode) {
   }
 }
 
+FileDataConstIterator FS::file_data_cbegin(const Inode &inode) const {
+  return FileDataConstIterator(*this, inode, 0, 0, false, 0);
+}
+
+FileDataConstIterator FS::file_data_cend(const Inode &inode) const {
+  auto blk_num = inode.size / BLOCK_SIZE;
+  const auto blk_offst = inode.size % BLOCK_SIZE;
+  if (blk_num < INODE_DIRECT_ADDRESS_NUM) {
+    return FileDataConstIterator(*this, inode, blk_num, 0, true, 0);
+  } else {
+    blk_num -= INODE_DIRECT_ADDRESS_NUM;
+    return FileDataConstIterator(
+        *this, inode, blk_num / INODE_INDIRECT_BLOCK_ADDRESS_NUM,
+        blk_num % INODE_INDIRECT_BLOCK_ADDRESS_NUM, false, 0);
+  }
+}
+
 blk_num_t FS::alloc_block() {
   const auto blk_num = this->bitmap.get_free_block();
   this->bitmap.blocks_bitmap.set(blk_num);
+  this->sb.used_blocks++;
+  // TODO: commit changes to disk
   return blk_num;
 }
 void FS::free_block(blk_num_t blk_num) {
   this->bitmap.blocks_bitmap.reset(blk_num);
+  this->sb.used_blocks--;
   const auto blk_addr = this->disk.begin() + get_data_block_address(blk_num);
   std::fill(blk_addr, blk_addr + BLOCK_SIZE, 0);
 }
@@ -86,10 +140,20 @@ void FS::free_block(blk_num_t blk_num) {
 i_num_t FS::alloc_inode() {
   const auto inode_num = this->bitmap.get_free_inode();
   this->bitmap.inodes_bitmap.set(inode_num);
+  this->sb.used_inodes++;
   return inode_num;
 }
 void FS::free_inode(i_num_t inode_num) {
   this->bitmap.inodes_bitmap.reset(inode_num);
+  this->sb.used_inodes--;
   const auto inode_addr = this->disk.begin() + get_inode_address(inode_num);
   std::fill(inode_addr, inode_addr + INODE_SIZE, 0);
+}
+
+void FS::free_inode_and_blocks(i_num_t inode_num) {
+  const auto inode = this->get_inode(inode_num);
+  this->free_inode(inode_num);
+  for (auto blk_num : inode.get_refer_blk_nums()) {
+    this->free_block(blk_num);
+  }
 }
