@@ -14,14 +14,12 @@
 
 FS::FS(i_uid_t uid, i_gid_t gid) { this->init_fs_on_disk(uid, gid); }
 
-FS::FS(const std::string &disk_file_path)
-    : disk(Disk::load(disk_file_path)),
-      sb(SuperBlock::read_from_disk(this->disk)),
-      bitmap(Bitmap::read_from_disk(this->disk)) {}
+FS::FS(const std::string &disk_file_path) : disk(Disk::load(disk_file_path)) {
+  this->sb = SuperBlock::read_from_disk(this->disk);
+  this->bitmap = Bitmap::read_from_disk(this->disk);
+}
 
 void FS::dump(const std::string &file_path) {
-  this->disk.save(file_path);
-
   // save super block and inodes to disk at the end
   const auto sb_bytes = this->sb.to_bytes();
   const auto inodes_bitmap_bytes = this->bitmap.inodes_bitmap_bytes();
@@ -32,6 +30,8 @@ void FS::dump(const std::string &file_path) {
             this->disk.begin() + INODES_BITMAP_START);
   std::move(blocks_bitmap_bytes.begin(), blocks_bitmap_bytes.end(),
             this->disk.begin() + BLOCKS_BITMAP_START);
+
+  this->disk.save(file_path);
 }
 
 void FS::init_fs_on_disk(i_uid_t uid, i_gid_t gid) {

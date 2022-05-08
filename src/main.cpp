@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
     show_help(argv[0]);
   } else {
     if (options.file == nullptr) {
-      std::cerr << "Missing file" << std::endl;
+      std::cerr << "Missing file arguemnt!" << std::endl;
       return 1;
     }
 

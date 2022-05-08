@@ -1,5 +1,7 @@
 #include "fd_iter.h"
+#include "config.h"
 #include "fs.h"
+#include <cmath>
 
 // TODO: how to extract common logic of FileDataIterator and
 // FileDataConstIterator?
@@ -38,6 +40,9 @@ FileDataIterator FileDataIterator::operator+(size_t n) {
 }
 
 FileDataIterator::value_type &FileDataIterator::operator*() {
+  if (!is_direct && indirect_addr_index >= INODE_INDIRECT_ADDRESS_NUM) {
+    throw std::out_of_range("Cannot allocate blocks for file");
+  }
   allocate_if_needed();
   return *(fs.disk.begin() + get_data_block_address(get_current_block_num()) +
            blk_offset);
@@ -105,6 +110,10 @@ FileDataConstIterator FileDataConstIterator::operator+(size_t n) {
 }
 
 FileDataConstIterator::value_type &FileDataConstIterator::operator*() {
+  if (!is_direct && indirect_addr_index >= INODE_INDIRECT_ADDRESS_NUM) {
+    throw std::out_of_range("Cannot allocate blocks for file");
+  }
+
   return *(fs.disk.cbegin() + get_data_block_address(get_current_block_num()) +
            blk_offset);
 }
