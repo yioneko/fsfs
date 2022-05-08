@@ -11,7 +11,7 @@ class Disk {
 public:
   Disk();
   void save(const std::string &path) const;
-  static Disk &&load(const std::string &path);
+  static Disk load(const std::string &path);
 
   auto begin() { return this->data.begin(); }
   auto end() { return this->data.end(); }

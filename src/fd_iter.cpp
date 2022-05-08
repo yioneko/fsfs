@@ -54,18 +54,20 @@ bool FileDataIterator::operator!=(const FileDataIterator &other) const {
   return !(*this == other);
 }
 
-blk_num_t FileDataIterator::get_current_block_num() {
+blk_num_t &FileDataIterator::get_current_block_num() {
   return is_direct
              ? inode.direct_addresses[addr_index]
              : inode.indirect_block_addresses[indirect_addr_index][addr_index];
 }
 
 void FileDataIterator::allocate_if_needed() {
-  for (auto i = inode.indirect_block_addresses.size(); i < indirect_addr_index;
-       ++i) {
-    inode.expand_indirect_addresses({fs.alloc_block()});
+  if (!is_direct) {
+    for (auto i = inode.indirect_block_addresses.size();
+         i <= indirect_addr_index; ++i) {
+      inode.expand_indirect_addresses({fs.alloc_block()});
+    }
   }
-  auto cur_block_num = this->get_current_block_num();
+  auto &cur_block_num = get_current_block_num();
   if (cur_block_num == 0) {
     cur_block_num = fs.alloc_block();
   }

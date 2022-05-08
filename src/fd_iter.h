@@ -29,7 +29,7 @@ public:
   bool operator==(const FileDataIterator &) const;
   bool operator!=(const FileDataIterator &other) const;
 
-  blk_num_t get_current_block_num();
+  blk_num_t &get_current_block_num();
 
 private:
   FS &fs;

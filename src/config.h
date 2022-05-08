@@ -18,7 +18,7 @@ constexpr size_t DISK_SIZE =
 constexpr size_t BLOCK_SIZE = 1 << 10;
 typedef unsigned short blk_num_t;
 constexpr size_t BLOCK_NUM_MAX =
-    18 * (1 << 10); // ~= (DISK_SIZE - INODE_NUM * INODE_SIZE) / BLOCK_SIZE
+    11 * (1 << 10); // ~= (DISK_SIZE - INODES_NUM_MAX * INODE_SIZE) / BLOCK_SIZE
 
 // inode
 /* Unit: byte
@@ -62,7 +62,7 @@ constexpr size_t INODE_SIZE = 64;
 +----+----+----+----+----+----+----+----+
 |ESIZE|  INUM  |                        |
 +--+--+--+--+--+                        +
-/              <FILE NAME>              /
+/           <FILE NAME><NL>             /
 /              <PADDING>                /
 +----+----+----+----+----+----+----+----+
  */
@@ -102,7 +102,7 @@ inline auto get_inode_address(i_num_t inode_num) {
   return INODES_START + inode_num * INODE_SIZE;
 }
 inline auto get_data_block_address(blk_num_t block_num) {
-  return BLOCKS_START + block_num * BLOCK_SIZE;
+  return BLOCKS_START + (block_num - 1) * BLOCK_SIZE;
 }
 
 #endif /* CONFIG_H */

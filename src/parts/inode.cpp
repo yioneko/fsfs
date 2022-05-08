@@ -19,7 +19,7 @@ Inode::Inode(i_mode_t mode, i_uid_t uid, i_gid_t gid, i_fsize_t size,
   this->indirect_addresses.fill(0);
 }
 
-Inode &&Inode::read_from_disk(const Disk &disk, const size_t offset) {
+Inode Inode::read_from_disk(const Disk &disk, const size_t offset) {
   auto iter = disk.cbegin() + offset;
   auto mode = read_n<i_mode_t>(iter);
   auto uid = read_n<i_uid_t>(iter);
@@ -47,10 +47,10 @@ Inode &&Inode::read_from_disk(const Disk &disk, const size_t offset) {
     }
   }
 
-  return std::move(res);
+  return res;
 }
 
-std::pair<std::array<byte, INODE_SIZE>, Inode::indirect_block_bytes_t> &&
+std::pair<std::array<byte, INODE_SIZE>, Inode::indirect_block_bytes_t>
 Inode::to_bytes() const {
   std::array<byte, INODE_SIZE> bytes;
   auto iter = bytes.begin();
@@ -83,8 +83,7 @@ Inode::to_bytes() const {
     }
   }
 
-  return std::move(
-      std::make_pair(std::move(bytes), std::move(indirect_block_bytes)));
+  return std::make_pair(bytes, indirect_block_bytes);
 }
 
 void Inode::expand_indirect_addresses(std::initializer_list<blk_num_t> blocks) {

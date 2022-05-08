@@ -4,7 +4,7 @@
 
 Disk::Disk() { this->data.fill(0); }
 
-Disk &&Disk::load(const std::string &path) {
+Disk Disk::load(const std::string &path) {
   Disk disk;
 
   std::ifstream file(path, std::ios::binary);
@@ -13,11 +13,11 @@ Disk &&Disk::load(const std::string &path) {
   }
   file.read(reinterpret_cast<char *>(disk.data.data()), disk.data.size());
   file.close();
-  return std::move(disk);
+  return disk;
 }
 
 void Disk::save(const std::string &path) const {
-  std::ofstream file(path, std::ios::binary);
+  std::ofstream file(path, std::ios::binary | std::ios::trunc);
   if (!file.is_open()) {
     throw std::runtime_error("Could not open file: " + path);
   }

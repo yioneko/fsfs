@@ -47,7 +47,7 @@ inline std::string parent_path(const std::string &path) {
   if (last_slash == std::string::npos) {
     return "/";
   }
-  return path.substr(0, last_slash);
+  return path.substr(0, last_slash + 1);
 }
 
 inline std::string basename(const std::string &path) {

@@ -25,10 +25,10 @@ struct Inode {
 
   typedef std::vector<std::pair<blk_num_t, std::array<byte, BLOCK_SIZE>>>
       indirect_block_bytes_t;
-  std::pair<std::array<byte, INODE_SIZE>, indirect_block_bytes_t> &&
+  std::pair<std::array<byte, INODE_SIZE>, indirect_block_bytes_t>
   to_bytes() const;
 
-  static Inode &&read_from_disk(const Disk &, const size_t offset);
+  static Inode read_from_disk(const Disk &, const size_t offset);
 
   void expand_indirect_addresses(std::initializer_list<blk_num_t> blocks);
   std::vector<blk_num_t> get_refer_blk_nums() const;

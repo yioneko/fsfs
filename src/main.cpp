@@ -6,10 +6,10 @@
 #include "fs.h"
 #include "utils.h"
 #include <cstddef>
+#include <cstring>
 #include <errno.h>
 #include <fuse3/fuse.h>
 #include <fuse3/fuse_lowlevel.h>
-#include <fuse3/fuse_opt.h>
 #include <iostream>
 #include <string>
 #include <sys/stat.h>
@@ -42,9 +42,12 @@ static void fsfs_destroy(void *) {
 static int fsfs_getattr(const char *path, struct stat *stat,
                         struct fuse_file_info *) {
   try {
-    const auto dirent = fs->get_dirent(path);
-    const auto inode = fs->get_inode(dirent.inode_num);
+    const auto dir_inum = strcmp(path, "/") == 0
+                              ? ROOT_INODE_NUM
+                              : fs->get_dirent(path).inode_num;
+    const auto inode = fs->get_inode(dir_inum);
     stat->st_mode = inode.mode;
+    stat->st_nlink = 1; // NOTE: assume no hard links
     stat->st_uid = inode.uid;
     stat->st_gid = inode.gid;
     stat->st_size = inode.size;
@@ -60,13 +63,14 @@ static int fsfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                         off_t, struct fuse_file_info *,
                         enum fuse_readdir_flags) {
   try {
-    const auto dirent = fs->get_dirent(path);
-    const auto inode = fs->get_inode(dirent.inode_num);
+    const auto inum = strcmp(path, "/") == 0 ? ROOT_INODE_NUM
+                                             : fs->get_dirent(path).inode_num;
+    const auto inode = fs->get_inode(inum);
     if (!S_ISDIR(inode.mode)) {
       return -ENOTDIR;
     }
 
-    const auto dir = fs->get_dir_data(dirent.inode_num);
+    const auto dir = fs->get_dir_data(inum);
     for (const auto &entry : dir.dirents) {
       // TOOD: fill the stat buf
       filler(buf, entry.fname.c_str(), nullptr, 0,
@@ -183,6 +187,36 @@ static int fsfs_unlink(const char *path) {
   }
 }
 
+static int fsfs_chmod(const char *path, mode_t mode, struct fuse_file_info *) {
+  try {
+    const auto dirent = fs->get_dirent(path);
+    auto inode = fs->get_inode(dirent.inode_num);
+    inode.mode = mode;
+    fs->write_inode(inode, dirent.inode_num);
+    return 0;
+  } catch (const std::exception &e) {
+    return -ENOENT;
+  }
+}
+
+static int fsfs_chown(const char *path, uid_t uid, gid_t gid,
+                      struct fuse_file_info *) {
+  try {
+    const auto dirent = fs->get_dirent(path);
+    auto inode = fs->get_inode(dirent.inode_num);
+    inode.uid = uid;
+    inode.gid = gid;
+    fs->write_inode(inode, dirent.inode_num);
+    return 0;
+  } catch (const std::exception &e) {
+    return -ENOENT;
+  }
+}
+
+// TODO
+// static int fsfs_truncate(const char *path, off_t size);
+// static int fsfs_rename(char *from, char *to, unsigned int flags);
+
 static int fsfs_mkdir(const char *path, mode_t mode) {
   auto ctx = fuse_get_context();
   const auto dir_path = parent_path(path);
@@ -234,18 +268,25 @@ int main(int argc, char *argv[]) {
       .mkdir = fsfs_mkdir,
       .unlink = fsfs_unlink,
       .rmdir = fsfs_rmdir,
+      .chmod = fsfs_chmod,
+      .chown = fsfs_chown,
       .open = fsfs_open,
       .read = fsfs_read,
       .write = fsfs_write,
       .statfs = fsfs_statfs,
       .readdir = fsfs_readdir,
+      .destroy = fsfs_destroy,
+      .create = fsfs_create,
   };
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
   if (fuse_opt_parse(&args, &options, option_spec, NULL) == -1) {
     return 1;
   }
-  fuse_opt_add_arg(&args, "-o default_permissions");
+  fuse_opt_add_arg(&args, "-f"); // force foreground mode
+  // fuse_opt_add_arg(&args, "-d"); // debug
+  fuse_opt_add_arg(&args, "-o");
+  fuse_opt_add_arg(&args, "default_permissions");
 
   if (options.show_help) {
     show_help(argv[0]);

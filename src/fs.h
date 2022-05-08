@@ -12,8 +12,9 @@
 #include <cstring>
 #include <iterator>
 #include <memory>
+#include <sys/stat.h>
 
-constexpr i_mode_t ROOT_DIR_MODE = 0555;
+constexpr i_mode_t ROOT_DIR_MODE = S_IFDIR | 0775;
 constexpr i_num_t ROOT_INODE_NUM = 0;
 
 class FS {
@@ -24,13 +25,15 @@ public:
   FS(i_uid_t uid, i_gid_t gid);
   FS(const std::string &disk_file_path);
 
-  void dump(const std::string &file_path) const;
+  void dump(const std::string &file_path);
 
   Dirent get_dirent(const std::string &path) const;
   Inode get_inode(i_num_t inode_num) const;
   Dir get_dir_data(i_num_t inode_num) const;
 
   void write_inode(const Inode &inode, i_num_t inode_num);
+
+  // This updates inode as well
   template <typename Iter>
   i_fsize_t write_data(Iter data_begin, Iter data_end, Inode &inode,
                        i_fsize_t offset = 0) {
@@ -44,7 +47,7 @@ public:
          ++data_iter, ++file_data_iter, ++write_bytes) {
       *file_data_iter = *data_iter;
     }
-    inode.size = std::min(inode.size, offset + write_bytes);
+    inode.size = std::max(inode.size, offset + write_bytes);
     return write_bytes;
   }
 
