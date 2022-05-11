@@ -18,7 +18,7 @@ constexpr size_t DISK_SIZE =
 constexpr size_t BLOCK_SIZE = 1 << 10;
 typedef unsigned short blk_num_t;
 constexpr size_t BLOCK_NUM_MAX =
-    11 * (1 << 10); // ~= (DISK_SIZE - INODES_NUM_MAX * INODE_SIZE) / BLOCK_SIZE
+    14 * (1 << 10); // ~= (DISK_SIZE - INODES_NUM_MAX * INODE_SIZE) / BLOCK_SIZE
 
 // inode
 /* Unit: byte
@@ -45,7 +45,7 @@ typedef unsigned int i_fsize_t;
 typedef unsigned int i_time_t;
 
 typedef unsigned short i_num_t;
-constexpr size_t INODES_NUM_MAX = 1 << TYPE_BITS(i_num_t);
+constexpr size_t INODES_NUM_MAX = 1 << 14;
 
 constexpr size_t INODE_DIRECT_ADDRESS_NUM = 10;
 constexpr size_t INODE_INDIRECT_ADDRESS_NUM = 1;
