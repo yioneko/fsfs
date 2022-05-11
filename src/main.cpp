@@ -123,6 +123,22 @@ static int fsfs_create(const char *path, mode_t mode,
   }
 }
 
+static int fsfs_utimens(const char *path, const struct timespec tv[2],
+                        struct fuse_file_info *) {
+  try {
+
+    const auto inum = strcmp(path, "/") == 0 ? ROOT_INODE_NUM
+                                             : fs->get_dirent(path).inode_num;
+    auto inode = fs->get_inode(inum);
+    inode.atime = tv[0].tv_sec;
+    inode.mtime = tv[1].tv_sec;
+    fs->write_inode(inode, inum);
+    return 0;
+  } catch (const std::exception &e) {
+    return -ENOENT;
+  }
+}
+
 static int fsfs_read(const char *path, char *buf, size_t size, off_t offset,
                      struct fuse_file_info *) {
   try {
@@ -213,7 +229,7 @@ static int fsfs_chown(const char *path, uid_t uid, gid_t gid,
   }
 }
 
-// TODO
+// TODO: mv
 // static int fsfs_truncate(const char *path, off_t size);
 // static int fsfs_rename(char *from, char *to, unsigned int flags);
 
@@ -277,6 +293,7 @@ int main(int argc, char *argv[]) {
       .readdir = fsfs_readdir,
       .destroy = fsfs_destroy,
       .create = fsfs_create,
+      .utimens = fsfs_utimens,
   };
   struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
@@ -292,7 +309,7 @@ int main(int argc, char *argv[]) {
     show_help(argv[0]);
   } else {
     if (options.file == nullptr) {
-      std::cerr << "Missing file arguemnt!" << std::endl;
+      std::cerr << "`--file` argument is required" << std::endl;
       return 1;
     }
 
