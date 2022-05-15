@@ -311,6 +311,11 @@ int main(int argc, char *argv[]) {
     if (options.file == nullptr) {
       std::cerr << "`--file` argument is required" << std::endl;
       return 1;
+    } else {
+      auto file_path = new char[PATH_MAX];
+      realpath(options.file, file_path);
+      delete options.file;
+      options.file = file_path;
     }
 
     if (access(options.file, F_OK) != -1) {
